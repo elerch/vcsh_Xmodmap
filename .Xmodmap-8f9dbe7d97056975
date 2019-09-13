@@ -1,0 +1,5 @@
+clear Lock
+keycode 66 = Super_L
+keycode 117 = Page_Down
+keycode 94 = grave asciitilde
+remove control = Super_L
