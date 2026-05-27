@@ -1,5 +1,41 @@
-keycode 66 = Control_L
-clear Lock
-add Control = Control_L
-keycode 117 = Caps_Lock
-add Lock = Caps_Lock
+! Xmodmap is intentionally a no-op. Kept around so .xinitrc's
+! `xmodmap $usermodmap` call doesn't error, and so the vcsh repo
+! history (and the per-host -<hash> overrides) remain available.
+!
+! Why: keyd (/etc/keyd/default.conf) now owns the CapsLock remap
+! at the kernel/uinput layer, well before X sees the key. It does:
+!   capslock = overload(meta, escape)   (tap=Esc, hold=Super)
+! That's strictly better than what this file used to do, and any
+! Xmodmap rebinding of CapsLock here is dead code at best and
+! actively conflicts with keyd at worst.
+!
+! Originally, this was:
+!   keycode 66 = Control_L
+!   clear Lock
+!   add Control = Control_L
+!
+! On a machine without keyd, the CapsLock-as-Control swap is still
+! the important behavior to preserve -- but Xmodmap is no longer
+! the right tool. Xmodmap is X11-only legacy (doesn't work under
+! Wayland) and has been superseded by xkb options for years. The
+! modern, portable equivalent of the old swap above is:
+!
+!   setxkbmap -option ctrl:nocaps
+!
+! and every modern desktop exposes this as a checkbox somewhere:
+!   GNOME: Settings -> Keyboard, or
+!          gsettings set org.gnome.desktop.input-sources \
+!            xkb-options "['ctrl:nocaps']"
+!   KDE:   System Settings -> Input Devices -> Keyboard ->
+!          Advanced -> "Caps Lock behavior"
+!   Sway / Hyprland / wlroots: xkb_options = ctrl:nocaps
+!   COSMIC: Settings -> Input Devices -> Keyboard -> "Caps Lock
+!           Key". Writes xkb_options into
+!             ~/.config/cosmic/com.system76.CosmicComp/v1/xkb_config
+!           (same ctrl:nocaps option name; COSMIC is libxkbcommon
+!           under the hood like other Wayland compositors.)
+!   TTY/console: /etc/vconsole.conf or loadkeys
+!
+! So: prefer keyd if present (kernel-level, works everywhere
+! including Wayland and TTYs); otherwise use the desktop's xkb
+! option. Don't reach for Xmodmap.
